@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PickleMate 原版 vs 改版对比原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { margin: 0; background: #f2f2f0; }
+    * { box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const games = [
+      {
+        id: 1,
+        title: "今晚新手友好局",
+        time: "今天 19:30-21:30",
+        venue: "TopSpin 球场 · 2号场",
+        distance: "2.3 km",
+        level: "2.5–3.0级",
+        people: "3/4人",
+        price: "¥25/人",
+        badge: "推荐",
+      },
+      {
+        id: 2,
+        title: "女生专场 · 轻松娱乐局",
+        time: "今天 20:00-22:00",
+        venue: "Paddle Park · 3号场",
+        distance: "1.7 km",
+        level: "2.5–3.5级",
+        people: "1/4人",
+        price: "¥30/人",
+        badge: "同城",
+      },
+      {
+        id: 3,
+        title: "周末竞技练习局",
+        time: "明天 09:00-11:00",
+        venue: "ACE Pickleball · 1号场",
+        distance: "4.1 km",
+        level: "3.5–4.0级",
+        people: "2/4人",
+        price: "¥40/人",
+        badge: "进阶",
+      },
+    ];
+
+    const buddies = [
+      {
+        name: "Alex",
+        avatar: "A",
+        ballAge: "球龄2.6年",
+        level: "入门",
+        cancel: "0次",
+        score: "4.9",
+      },
+      {
+        name: "Mia",
+        avatar: "M",
+        ballAge: "球龄8个月",
+        level: "新手",
+        cancel: "0次",
+        score: "4.8",
+      },
+      {
+        name: "Ken",
+        avatar: "K",
+        ballAge: "球龄1.6年",
+        level: "进阶",
+        cancel: "1次",
+        score: "4.7",
+      },
+    ];
+
+    function PhoneFrame({ children }) {
+      return (
+        <div className="w-full max-w-[390px] h-[820px] rounded-[42px] bg-black p-2 shadow-2xl mx-auto">
+          <div className="w-full h-full rounded-[34px] bg-[#f7f7f5] overflow-hidden flex flex-col relative">
+            <StatusBar />
+            {children}
+          </div>
+        </div>
+      );
+    }
+
+    function StatusBar() {
+      return (
+        <div className="h-10 px-6 pt-3 flex justify-between items-start text-xs font-black shrink-0 relative">
+          <span>9:41</span>
+          <div className="absolute left-1/2 top-2 -translate-x-1/2 w-28 h-7 bg-black rounded-full" />
+          <span>▱ 5G</span>
+        </div>
+      );
+    }
+
+    function ScreenHeader({ title, subtitle, right }) {
+      return (
+        <div className="px-5 pb-3 flex items-center justify-between shrink-0">
+          <div>
+            <h1 className="text-[24px] leading-tight font-black text-zinc-950">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>
+            )}
+          </div>
+          <div className="flex gap-2">{right}</div>
+        </div>
+      );
+    }
+
+    function IconBtn({ children }) {
+      return (
+        <button className="w-11 h-11 rounded-full bg-white shadow-sm flex items-center justify-center text-lg">
+          {children}
+        </button>
+      );
+    }
+
+    function Card({ children, className = "" }) {
+      return (
+        <div
+          className={`bg-white rounded-[24px] border border-black/[0.04] shadow-sm ${className}`}
+        >
+          {children}
+        </div>
+      );
+    }
+
+    function Pill({ children, active = false }) {
+      return (
+        <span
+          className={`px-3 py-1.5 rounded-full text-xs font-black whitespace-nowrap ${
+            active ? "bg-[#9dd53b] text-white" : "bg-zinc-100 text-zinc-600"
+          }`}
+        >
+          {children}
+        </span>
+      );
+    }
+
+    function Avatar({ children, size = "md" }) {
+      const cls =
+        size === "sm"
+          ? "w-9 h-9 text-sm"
+          : size === "lg"
+          ? "w-20 h-20 text-2xl"
+          : "w-12 h-12 text-base";
+      return (
+        <div
+          className={`${cls} rounded-full bg-zinc-900 text-white flex items-center justify-center font-black`}
+        >
+          {children}
+        </div>
+      );
+    }
+
+    function BottomNav({ active = "home" }) {
+      const items = [
+        ["home", "首页", "⌂"],
+        ["stats", "统计", "▥"],
+        ["discover", "发现", "➤"],
+        ["message", "消息", "◌"],
+        ["profile", "我的", "○"],
+      ];
+      return (
+        <div className="h-[72px] bg-white border-t border-black/5 grid grid-cols-5 shrink-0">
+          {items.map(([key, label, icon]) => {
+            const isActive = key === active;
+            return (
+              <div
+                key={key}
+                className={`flex flex-col items-center justify-center gap-1 text-[11px] ${
+                  isActive ? "text-[#78bc1f] font-black" : "text-zinc-500"
+                }`}
+              >
+                <span
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-base ${
+                    isActive ? "bg-[#9dd53b]/20" : ""
+                  }`}
+                >
+                  {icon}
+                </span>
+                <span>{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    function Annotation({ n, children, className = "" }) {
+      return (
+        <div className={`absolute z-20 flex items-start gap-1.5 ${className}`}>
+          <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[11px] font-black flex items-center justify-center shrink-0 ring-2 ring-white">
+            {n}
+          </span>
+          <span className="bg-white border border-red-300 text-red-600 rounded-xl px-2 py-1 text-[10px] leading-tight font-black shadow-sm max-w-[150px]">
+            {children}
+          </span>
+        </div>
+      );
+    }
+
+    /* -------------------- 原版页面 -------------------- */
+
+    function OriginalHome() {
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader
+            title="早上好，Alex 👋"
+            subtitle="今天也要来一场精彩对决！"
+            right={
+              <>
+                <IconBtn>◴</IconBtn>
+                <IconBtn>🔔</IconBtn>
+              </>
+            }
+          />
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="p-5 bg-gradient-to-br from-[#d8ef9e] to-[#a7db42]">
+              <p className="text-base font-black">本周打球进度</p>
+              <div className="flex justify-between items-end mt-4">
+                <div>
+                  <div className="text-5xl font-black">
+                    6<span className="text-2xl">/10 局</span>
+                  </div>
+                  <p className="text-sm text-zinc-700 mt-3">
+                    再打 4 局即可达成目标
+                  </p>
+                </div>
+                <div className="w-24 h-24 rounded-full border-[12px] border-[#8fc72b] flex items-center justify-center bg-white text-2xl font-black">
+                  60%
+                </div>
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="p-4">
+                <p className="text-sm text-zinc-400">约了</p>
+                <p className="text-4xl font-black mt-2">6 局</p>
+                <p className="text-sm text-zinc-400 mt-2">较上周 +2</p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm text-zinc-400">本周打球</p>
+                <p className="text-4xl font-black mt-2">3 次</p>
+                <p className="text-sm text-zinc-400 mt-2">较上周 +1</p>
+              </Card>
+            </div>
+
+            <Card className="p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-black text-2xl">今日赛程</h3>
+                <span className="text-sm text-zinc-400">查看全部 ›</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="bg-[#dff0c0] rounded-2xl px-5 py-3 text-[#78bc1f] font-black text-2xl">
+                  19:00
+                </div>
+                <div className="flex-1">
+                  <p className="font-black text-2xl">双打娱乐局</p>
+                  <p className="text-zinc-500 mt-1 text-lg">TopSpin 球场 · 2号场</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-black text-2xl">附近可加入的比赛</h3>
+                <span className="text-sm text-zinc-400">更多 ›</span>
+              </div>
+              <GameCardSimple game={games[0]} />
+            </Card>
+          </div>
+          <BottomNav active="home" />
+        </div>
+      );
+    }
+
+    function OriginalDiscover() {
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader
+            title="发现"
+            subtitle="上海 · 附近组局与场地"
+            right={
+              <>
+                <IconBtn>⚙</IconBtn>
+                <IconBtn>≡</IconBtn>
+              </>
+            }
+          />
+          <div className="px-5 pb-3 flex gap-2 overflow-x-auto shrink-0">
+            <Pill active>同城</Pill>
+            <Pill>附近</Pill>
+            <Pill>新手局</Pill>
+            <Pill>自动分组</Pill>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="h-28 relative overflow-hidden bg-[#f0f3ee]">
+              <div
+                className="absolute inset-0 opacity-70"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(90deg,rgba(0,0,0,.05) 1px,transparent 1px),linear-gradient(0deg,rgba(0,0,0,.04) 1px,transparent 1px)",
+                  backgroundSize: "40px 40px",
+                }}
+              />
+              <span className="absolute left-[48%] top-[35%] w-14 h-14 rounded-full bg-[#9dd53b]/20 flex items-center justify-center">
+                <span className="w-5 h-5 rounded-full bg-blue-500 ring-4 ring-white" />
+              </span>
+              <span className="absolute left-[18%] top-[48%] w-7 h-7 rounded-full bg-[#9dd53b] text-white flex items-center justify-center text-xs">
+                ⌖
+              </span>
+              <span className="absolute left-[60%] top-[45%] w-7 h-7 rounded-full bg-[#9dd53b] text-white flex items-center justify-center text-xs">
+                ⌖
+              </span>
+              <span className="absolute left-[76%] top-[46%] w-7 h-7 rounded-full bg-[#9dd53b] text-white flex items-center justify-center text-xs">
+                ⌖
+              </span>
+            </Card>
+
+            <div>
+              <h3 className="font-black text-2xl mb-3">附近组局</h3>
+              <div className="space-y-3">
+                {games.map((g) => (
+                  <GameCardSimple key={g.id} game={g} />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-black text-2xl mb-3">场地预订</h3>
+              <Card className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-black text-2xl">TopSpin 球场</p>
+                    <p className="text-zinc-500 mt-1 text-lg">
+                      距你 2.3km · 8:00–23:00
+                    </p>
+                  </div>
+                  <span className="bg-[#9dd53b] text-white rounded-full px-5 py-2 text-base font-black">
+                    去预订
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 mt-4 text-center">
+                  {["19:00", "20:00", "21:00", "更多"].map((t) => (
+                    <div
+                      key={t}
+                      className="bg-[#eef5e3] rounded-2xl py-3 text-[#78bc1f] font-black"
+                    >
+                      {t}
+                      <br />
+                      可订
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </div>
+          <BottomNav active="discover" />
+        </div>
+      );
+    }
+
+    function OriginalDetail() {
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader
+            title="组局详情"
+            subtitle="确认时间、水平与参与者"
+            right={<IconBtn>⋯</IconBtn>}
+          />
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="p-5">
+              <div className="flex justify-between items-start gap-3">
+                <div>
+                  <h2 className="text-2xl font-black">今晚新手友好局</h2>
+                  <p className="text-zinc-500 mt-3 text-lg">今天 19:30-21:30</p>
+                  <p className="text-zinc-500 mt-2 text-lg">
+                    TopSpin 球场 · 2号场 · 2.3 km
+                  </p>
+                </div>
+                <span className="bg-[#e9f3cf] text-[#78bc1f] rounded-full px-3 py-1 text-sm font-black">
+                  推荐
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mt-5">
+                <InfoBox label="水平" value="2.5–3.0级" />
+                <InfoBox label="人数" value="3/4人" />
+                <InfoBox label="费用" value="¥25/人" />
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Pill>新手友好</Pill>
+                <Pill>可借球拍</Pill>
+                <Pill>自动分组</Pill>
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <h3 className="font-black text-2xl mb-3">已报名球友</h3>
+              <div className="space-y-4">
+                {buddies.map((b) => (
+                  <div key={b.name} className="flex items-center gap-3">
+                    <Avatar size="sm">{b.avatar}</Avatar>
+                    <div className="flex-1">
+                      <p className="font-black text-lg">
+                        {b.name} · {b.ballAge} · {b.level}
+                      </p>
+                    </div>
+                    <span className="text-zinc-400">主页 ›</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-amber-50">
+              <p className="text-amber-700 text-base leading-7">
+                报名前提示：平台记录临时取消次数，用于减少放鸽子，提高陌生人组局成功率。
+              </p>
+            </Card>
+          </div>
+          <div className="p-5 bg-white border-t border-black/5">
+            <button className="w-full rounded-2xl bg-[#9dd53b] text-white py-4 font-black text-xl shadow-lg shadow-lime-200">
+              立即报名
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function OriginalPost() {
+      const rows = [
+        ["活动标题", "周五晚新手友好局"],
+        ["时间", "周五 19:30 - 21:00"],
+        ["地点", "TopSpin 球场 · 2号场"],
+        ["人数", "还缺 2 人 / 共 8 人"],
+        ["水平要求", "新手、入门均可参加"],
+        ["装备", "可提供2支备用球拍"],
+      ];
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader title="发布组局" subtitle="3步创建一场匹克球活动" />
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-3">
+            {rows.map(([k, v]) => (
+              <Card key={k} className="p-4">
+                <p className="text-zinc-400 text-sm">{k}</p>
+                <p className="font-black text-2xl mt-2">{v}</p>
+              </Card>
+            ))}
+          </div>
+          <div className="p-5 bg-white border-t border-black/5">
+            <button className="w-full rounded-2xl bg-[#9dd53b] text-white py-4 font-black text-xl">
+              发布组局
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function OriginalStats() {
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader
+            title="统计"
+            subtitle="运动数据与匹克球表现"
+            right={<IconBtn>▣</IconBtn>}
+          />
+          <div className="px-5 flex gap-8 text-xl font-black border-b border-black/5 mb-3">
+            <span className="text-[#78bc1f] border-b-2 border-[#9dd53b] pb-3">
+              总览
+            </span>
+            <span className="text-zinc-500 pb-3">周</span>
+            <span className="text-zinc-500 pb-3">月</span>
+            <span className="text-zinc-500 pb-3">年</span>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="p-4">
+              <h3 className="font-black text-2xl">本周打球次数</h3>
+              <p className="text-5xl font-black mt-3">3 次</p>
+              <div className="h-28 flex items-end gap-4 mt-4">
+                {[2, 1, 0, 3, 1, 2, 0].map((v, i) => (
+                  <div key={i} className="flex-1 text-center text-xs text-zinc-500">
+                    <div className="bg-zinc-100 h-20 rounded-full flex items-end overflow-hidden">
+                      <div
+                        className="w-full bg-[#9dd53b] rounded-full"
+                        style={{ height: `${Math.max(8, (v / 3) * 80)}px` }}
+                      />
+                    </div>
+                    <span>周{i + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-2 gap-3">
+              <DataCard title="消耗卡路里" value="1,256" unit="kcal" />
+              <DataCard title="运动时长" value="6.2" unit="小时" />
+              <DataCard title="平均心率" value="128" unit="bpm" />
+              <DataCard title="步数" value="32,846" unit="步" />
+            </div>
+          </div>
+          <BottomNav active="stats" />
+        </div>
+      );
+    }
+
+    function OriginalProfile() {
+      return (
+        <div className="h-full flex flex-col">
+          <div className="h-48 bg-gradient-to-br from-[#eff7dc] to-white relative shrink-0">
+            <div className="absolute right-5 top-3 flex gap-2">
+              <IconBtn>⚙</IconBtn>
+              <IconBtn>≡</IconBtn>
+            </div>
+            <div className="absolute left-5 bottom-5 flex items-end gap-4">
+              <Avatar size="lg">A</Avatar>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-black">Alex Chen</h1>
+                  <span className="bg-[#9dd53b] text-white rounded-full px-2 py-1 text-xs font-black">
+                    Lv.18
+                  </span>
+                </div>
+                <p className="text-zinc-500 mt-1 text-lg">球龄 2.6 年 · 上海</p>
+                <div className="flex gap-2 mt-2">
+                  <Pill>右手双反</Pill>
+                  <Pill>爱拼搏</Pill>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="p-4 grid grid-cols-4 text-center">
+              <MiniStat value="28场" label="参与" />
+              <MiniStat value="9次" label="组局" />
+              <MiniStat value="56" label="球友" />
+              <MiniStat value="0次" label="爽约" />
+            </Card>
+
+            <Card className="p-4">
+              <h3 className="font-black text-2xl mb-3">手表数据</h3>
+              <div className="grid grid-cols-4 text-center">
+                <MiniStat value="6.2h" label="时长" />
+                <MiniStat value="1,256" label="卡路里" />
+                <MiniStat value="128" label="心率" />
+                <MiniStat value="32,846" label="步数" />
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <h3 className="font-black text-2xl mb-3">最近动态</h3>
+              <div className="space-y-3">
+                <div className="border-b border-zinc-100 pb-3">
+                  <p className="font-black text-lg">参加了 欢乐双打局</p>
+                  <p className="text-zinc-500 mt-1 text-base">TopSpin 球场 · 2号场</p>
+                </div>
+                <div className="border-b border-zinc-100 pb-3">
+                  <p className="font-black text-lg">组了局 周末竞技练习局</p>
+                  <p className="text-zinc-500 mt-1 text-base">ACE Pickleball · 1号场</p>
+                </div>
+                <div>
+                  <p className="font-black text-lg">完成 6.2 小时本周运动</p>
+                  <p className="text-zinc-500 mt-1 text-base">Garmin Fenix 7 已同步</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+          <BottomNav active="profile" />
+        </div>
+      );
+    }
+
+    /* -------------------- 改版页面 -------------------- */
+
+    function RevisedHome() {
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader
+            title="快速找到匹克球搭子"
+            subtitle="约伴、组局、约场，一次完成"
+            right={
+              <>
+                <IconBtn>◴</IconBtn>
+                <IconBtn>🔔</IconBtn>
+              </>
+            }
+          />
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <div className="rounded-[28px] bg-gradient-to-br from-[#d9ff90] to-[#7ed800] p-5 shadow-sm relative pt-12">
+              <Annotation n="1" className="top-3 left-3">
+                首页前置“找人、加局、发局”
+              </Annotation>
+              <p className="text-sm font-bold text-zinc-800">本次改版重点</p>
+              <h2 className="text-3xl font-black leading-tight mt-2">先找人，再成局</h2>
+              <p className="text-xs text-zinc-700 mt-2">
+                根据调研反馈，首页优先突出约伴与组局入口。
+              </p>
+              <div className="grid grid-cols-3 gap-2 mt-5">
+                <div className="bg-white rounded-2xl py-3 text-center font-black text-sm">
+                  找球友
+                </div>
+                <div className="bg-white rounded-2xl py-3 text-center font-black text-sm">
+                  加入组局
+                </div>
+                <div className="bg-zinc-900 text-white rounded-2xl py-3 text-center font-black text-sm">
+                  发布组局
+                </div>
+              </div>
+            </div>
+
+            <Card className="p-4 relative pt-12">
+              <Annotation n="2" className="top-3 right-3">
+                新增“找搭子”模块
+              </Annotation>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-black text-2xl">今晚推荐球友</h3>
+                <span className="text-sm text-[#78bc1f] font-black">查看更多 ›</span>
+              </div>
+              <div className="space-y-3">
+                {buddies.slice(0, 2).map((b) => (
+                  <div key={b.name} className="flex items-center gap-3">
+                    <Avatar size="sm">{b.avatar}</Avatar>
+                    <div className="flex-1">
+                      <p className="font-black text-lg">
+                        {b.name} · {b.ballAge}
+                      </p>
+                      <p className="text-zinc-500 text-sm mt-1">
+                        {b.level} · 爽约{b.cancel} · 评分{b.score}
+                      </p>
+                    </div>
+                    <span className="text-xs bg-[#9dd53b]/15 text-[#78bc1f] font-black px-2 py-1 rounded-full">
+                      邀请
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-black text-2xl">今日可加入组局</h3>
+                <span className="text-sm text-zinc-400">全部 ›</span>
+              </div>
+              <GameCardSimple game={games[0]} />
+            </Card>
+
+            <Card className="p-4 relative pt-12">
+              <Annotation n="9" className="top-3 left-3">
+                统计数据保留为辅助
+              </Annotation>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-black text-2xl">运动数据</h3>
+                <span className="text-sm text-zinc-400">辅助记录</span>
+              </div>
+              <div className="grid grid-cols-3 divide-x divide-zinc-100 text-center">
+                <MiniStat value="8,942" label="步数" />
+                <MiniStat value="512" label="卡路里" />
+                <MiniStat value="128" label="心率" />
+              </div>
+            </Card>
+          </div>
+          <BottomNav active="home" />
+        </div>
+      );
+    }
+
+    function RevisedDiscover() {
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader
+            title="发现"
+            subtitle="找局、找搭子、订场地"
+            right={
+              <>
+                <IconBtn>⚙</IconBtn>
+                <IconBtn>≡</IconBtn>
+              </>
+            }
+          />
+          <div className="px-5 pb-3 flex gap-2 overflow-x-auto shrink-0 relative pt-8">
+            <Annotation n="3" className="top-0 left-5">
+              发现页收敛为“组局 / 搭子 / 场地”
+            </Annotation>
+            <Pill active>附近组局</Pill>
+            <Pill>找搭子</Pill>
+            <Pill>场地预约</Pill>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="h-28 relative overflow-hidden bg-[#f0f5ee]">
+              <div
+                className="absolute inset-0 opacity-70"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(90deg,rgba(0,0,0,.05) 1px,transparent 1px),linear-gradient(0deg,rgba(0,0,0,.04) 1px,transparent 1px)",
+                  backgroundSize: "40px 40px",
+                }}
+              />
+              <span className="absolute left-[48%] top-[35%] w-14 h-14 rounded-full bg-[#9dd53b]/20 flex items-center justify-center">
+                <span className="w-5 h-5 rounded-full bg-blue-500 ring-4 ring-white" />
+              </span>
+              <span className="absolute left-[20%] top-[48%] w-7 h-7 rounded-full bg-[#9dd53b] text-white flex items-center justify-center text-xs">
+                ⌖
+              </span>
+              <span className="absolute left-[62%] top-[42%] w-7 h-7 rounded-full bg-[#9dd53b] text-white flex items-center justify-center text-xs">
+                ⌖
+              </span>
+            </Card>
+
+            <div className="space-y-3">
+              {games.map((g) => (
+                <GameCardSimple key={g.id} game={g} />
+              ))}
+            </div>
+          </div>
+          <BottomNav active="discover" />
+        </div>
+      );
+    }
+
+    function RevisedDetail() {
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader
+            title="组局详情"
+            subtitle="时间、球友、费用与安全"
+            right={<IconBtn>⋯</IconBtn>}
+          />
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="p-5">
+              <div className="flex justify-between items-start gap-3">
+                <div>
+                  <h2 className="text-2xl font-black">今晚新手友好局</h2>
+                  <p className="text-zinc-500 mt-3 text-lg">今天 19:30-21:30</p>
+                  <p className="text-zinc-500 mt-2 text-lg">
+                    TopSpin 球场 · 2号场 · 2.3 km
+                  </p>
+                </div>
+                <span className="bg-[#e9f3cf] text-[#78bc1f] rounded-full px-3 py-1 text-sm font-black">
+                  推荐
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mt-5">
+                <InfoBox label="水平" value="2.5–3.0级" />
+                <InfoBox label="人数" value="3/4人" />
+                <InfoBox label="费用" value="¥25/人" />
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Pill>新手友好</Pill>
+                <Pill>可借球拍</Pill>
+                <Pill>自动分组</Pill>
+              </div>
+            </Card>
+
+            <Card className="p-4 relative pt-12">
+              <Annotation n="4" className="top-3 left-3">
+                新增费用明细，降低价格疑虑
+              </Annotation>
+              <h3 className="font-black text-2xl mb-3">费用明细</h3>
+              <FeeRow label="场地费" value="¥20" />
+              <FeeRow label="平台服务费" value="¥3" />
+              <FeeRow label="装备租借" value="¥2" />
+              <div className="border-t border-zinc-100 mt-2 pt-3 flex justify-between font-black text-lg">
+                <span>合计</span>
+                <span>¥25/人</span>
+              </div>
+            </Card>
+
+            <Card className="p-4 relative pt-12">
+              <Annotation n="5" className="top-3 right-3">
+                可查看已报名球友主页，增强信任
+              </Annotation>
+              <h3 className="font-black text-2xl mb-3">已报名球友</h3>
+              <div className="space-y-4">
+                {buddies.map((b) => (
+                  <div key={b.name} className="flex items-center gap-3">
+                    <Avatar size="sm">{b.avatar}</Avatar>
+                    <div className="flex-1">
+                      <p className="font-black text-lg">
+                        {b.name} · {b.ballAge} · {b.level}
+                      </p>
+                      <p className="text-zinc-500 text-sm mt-1">
+                        爽约{b.cancel} · 评分{b.score}
+                      </p>
+                    </div>
+                    <span className="text-zinc-400">主页 ›</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-amber-50 relative pt-12">
+              <Annotation n="6" className="top-3 left-3">
+                强化安全提醒与取消规则
+              </Annotation>
+              <h3 className="font-black text-2xl text-amber-900">安全与取消规则</h3>
+              <p className="text-amber-800 mt-2 leading-7 text-base">
+                平台记录临时取消次数；开局前2小时提醒；手机号验证后方可报名，减少陌生人组局风险。
+              </p>
+            </Card>
+          </div>
+          <div className="p-5 bg-white border-t border-black/5">
+            <button className="w-full rounded-2xl bg-[#9dd53b] text-white py-4 font-black text-xl shadow-lg shadow-lime-200">
+              立即报名
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function RevisedPost() {
+      const rows = [
+        ["活动标题", "周五晚新手友好局"],
+        ["时间", "周五 19:30 - 21:00"],
+        ["地点", "TopSpin 球场 · 2号场"],
+        ["人数", "还缺 2 人 / 共 8 人"],
+        ["水平要求", "新手、入门均可参加"],
+        ["费用说明", "场地费¥20 + 服务费¥3 + 装备¥2"],
+      ];
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader title="发布组局" subtitle="让附近球友更容易加入" />
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-3">
+            {rows.map(([k, v]) => (
+              <Card key={k} className="p-4">
+                <p className="text-zinc-400 text-sm">{k}</p>
+                <p className="font-black text-2xl mt-2">{v}</p>
+              </Card>
+            ))}
+
+            <Card className="p-4 bg-[#9dd53b]/10 relative pt-12">
+              <Annotation n="8" className="top-3 left-3">
+                加入平台建议，提高组局成功率
+              </Annotation>
+              <h3 className="font-black text-2xl">平台建议</h3>
+              <p className="text-zinc-600 mt-2 leading-7 text-base">
+                建议开启“新手友好”“费用明细”“开局提醒”，提高报名率和成局率。
+              </p>
+            </Card>
+          </div>
+          <div className="p-5 bg-white border-t border-black/5">
+            <button className="w-full rounded-2xl bg-[#9dd53b] text-white py-4 font-black text-xl">
+              发布组局
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function RevisedStats() {
+      return (
+        <div className="h-full flex flex-col">
+          <ScreenHeader
+            title="统计"
+            subtitle="运动数据作为辅助记录"
+            right={<IconBtn>▣</IconBtn>}
+          />
+          <div className="px-5 flex gap-8 text-xl font-black border-b border-black/5 mb-3">
+            <span className="text-[#78bc1f] border-b-2 border-[#9dd53b] pb-3">
+              总览
+            </span>
+            <span className="text-zinc-500 pb-3">周</span>
+            <span className="text-zinc-500 pb-3">月</span>
+            <span className="text-zinc-500 pb-3">年</span>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="p-4 relative pt-12">
+              <Annotation n="9" className="top-3 right-3">
+                数据保留，但不再作为首页主入口
+              </Annotation>
+              <h3 className="font-black text-2xl">本周打球次数</h3>
+              <p className="text-5xl font-black mt-3">3 次</p>
+              <div className="h-28 flex items-end gap-4 mt-4">
+                {[2, 1, 0, 3, 1, 2, 0].map((v, i) => (
+                  <div key={i} className="flex-1 text-center text-xs text-zinc-500">
+                    <div className="bg-zinc-100 h-20 rounded-full flex items-end overflow-hidden">
+                      <div
+                        className="w-full bg-[#9dd53b] rounded-full"
+                        style={{ height: `${Math.max(8, (v / 3) * 80)}px` }}
+                      />
+                    </div>
+                    <span>周{i + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-2 gap-3">
+              <DataCard title="消耗卡路里" value="1,256" unit="kcal" />
+              <DataCard title="运动时长" value="6.2" unit="小时" />
+              <DataCard title="平均心率" value="128" unit="bpm" />
+              <DataCard title="步数" value="32,846" unit="步" />
+            </div>
+          </div>
+          <BottomNav active="stats" />
+        </div>
+      );
+    }
+
+    function RevisedProfile() {
+      return (
+        <div className="h-full flex flex-col">
+          <div className="h-48 bg-gradient-to-br from-[#eff7dc] to-white relative shrink-0">
+            <div className="absolute right-5 top-3 flex gap-2">
+              <IconBtn>⚙</IconBtn>
+              <IconBtn>≡</IconBtn>
+            </div>
+            <div className="absolute left-5 bottom-5 flex items-end gap-4">
+              <Avatar size="lg">A</Avatar>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-black">Alex Chen</h1>
+                  <span className="bg-[#9dd53b] text-white rounded-full px-2 py-1 text-xs font-black">
+                    Lv.18
+                  </span>
+                </div>
+                <p className="text-zinc-500 mt-1 text-lg">球龄 2.6 年 · 上海</p>
+                <div className="flex gap-2 mt-2">
+                  <Pill>右手双反</Pill>
+                  <Pill>爱拼搏</Pill>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+            <Card className="p-4 grid grid-cols-4 text-center relative pt-12">
+              <Annotation n="7" className="top-3 left-3">
+                主页强化信任信息：评分、爽约、参与记录
+              </Annotation>
+              <MiniStat value="28场" label="参与" />
+              <MiniStat value="9次" label="组局" />
+              <MiniStat value="0次" label="爽约" />
+              <MiniStat value="4.9" label="评分" />
+            </Card>
+
+            <Card className="p-4">
+              <h3 className="font-black text-2xl mb-3">约球信任信息</h3>
+              <div className="space-y-3 text-base">
+                <TrustLine label="常打区域" value="TopSpin / 大学城" />
+                <TrustLine label="身份验证" value="手机号已验证" />
+                <TrustLine label="临时取消" value="0次，平台已记录" />
+                <TrustLine label="适合类型" value="新手友好 / 可带新人" />
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <h3 className="font-black text-2xl mb-3">最近动态</h3>
+              <div className="space-y-3">
+                <div className="border-b border-zinc-100 pb-3">
+                  <p className="font-black text-lg">参加了 欢乐双打局</p>
+                  <p className="text-zinc-500 mt-1 text-base">TopSpin 球场 · 2号场</p>
+                </div>
+                <div className="border-b border-zinc-100 pb-3">
+                  <p className="font-black text-lg">组了局 周末竞技练习局</p>
+                  <p className="text-zinc-500 mt-1 text-base">ACE Pickleball · 1号场</p>
+                </div>
+                <div>
+                  <p className="font-black text-lg">完成 6.2 小时本周运动</p>
+                  <p className="text-zinc-500 mt-1 text-base">Garmin Fenix 7 已同步</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+          <BottomNav active="profile" />
+        </div>
+      );
+    }
+
+    /* -------------------- 公共小组件 -------------------- */
+
+    function GameCardSimple({ game }) {
+      return (
+        <Card className="p-4">
+          <div className="flex justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-black text-2xl truncate">{game.title}</p>
+              <p className="text-zinc-500 mt-2 text-lg">{game.time}</p>
+              <p className="text-zinc-500 mt-1 text-lg truncate">
+                ⌖ {game.venue} · {game.distance}
+              </p>
+              <p className="text-zinc-500 mt-1 text-lg">
+                ◎ {game.level}　♟ {game.people}
+              </p>
+            </div>
+            <span className="h-fit bg-orange-100 text-orange-500 rounded-full px-3 py-1 text-sm font-black whitespace-nowrap">
+              {game.badge}
+            </span>
+          </div>
+          <div className="flex justify-between items-center mt-4">
+            <span className="font-black text-3xl">{game.price}</span>
+            <span className="bg-[#9dd53b] text-white rounded-full px-5 py-2 text-lg font-black">
+              加入
+            </span>
+          </div>
+        </Card>
+      );
+    }
+
+    function InfoBox({ label, value }) {
+      return (
+        <div className="bg-zinc-50 rounded-2xl p-3 text-center">
+          <p className="text-sm text-zinc-500">{label}</p>
+          <p className="text-lg font-black mt-2">{value}</p>
+        </div>
+      );
+    }
+
+    function FeeRow({ label, value }) {
+      return (
+        <div className="flex justify-between py-2 text-base">
+          <span className="text-zinc-500">{label}</span>
+          <span className="font-black">{value}</span>
+        </div>
+      );
+    }
+
+    function DataCard({ title, value, unit }) {
+      return (
+        <Card className="p-4">
+          <p className="text-zinc-500 text-base">{title}</p>
+          <p className="text-4xl font-black mt-2">
+            {value}
+            <span className="text-base text-zinc-500 ml-1">{unit}</span>
+          </p>
+          <div className="h-8 mt-4 bg-gradient-to-r from-[#9dd53b]/10 via-[#9dd53b]/30 to-[#9dd53b]/10 rounded-full" />
+        </Card>
+      );
+    }
+
+    function MiniStat({ value, label }) {
+      return (
+        <div className="px-1">
+          <p className="text-2xl font-black">{value}</p>
+          <p className="text-sm text-zinc-500 mt-1">{label}</p>
+        </div>
+      );
+    }
+
+    function TrustLine({ label, value }) {
+      return (
+        <div className="flex justify-between gap-3 py-2 border-b border-zinc-100 last:border-b-0">
+          <span className="text-zinc-500">{label}</span>
+          <span className="font-black text-right">{value}</span>
+        </div>
+      );
+    }
+
+    /* -------------------- 主组件 -------------------- */
+
+    function PickleMateComparePrototype() {
+      const [page, setPage] = useState("home");
+
+      const tabs = [
+        ["home", "首页"],
+        ["discover", "发现"],
+        ["detail", "详情"],
+        ["post", "发布组局"],
+        ["stats", "统计"],
+        ["profile", "我的"],
+      ];
+
+      const renderOriginal = () => {
+        switch (page) {
+          case "home":
+            return <OriginalHome />;
+          case "discover":
+            return <OriginalDiscover />;
+          case "detail":
+            return <OriginalDetail />;
+          case "post":
+            return <OriginalPost />;
+          case "stats":
+            return <OriginalStats />;
+          case "profile":
+            return <OriginalProfile />;
+          default:
+            return <OriginalHome />;
+        }
+      };
+
+      const renderRevised = () => {
+        switch (page) {
+          case "home":
+            return <RevisedHome />;
+          case "discover":
+            return <RevisedDiscover />;
+          case "detail":
+            return <RevisedDetail />;
+          case "post":
+            return <RevisedPost />;
+          case "stats":
+            return <RevisedStats />;
+          case "profile":
+            return <RevisedProfile />;
+          default:
+            return <RevisedHome />;
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-[#f2f2f0] p-6 md:p-8">
+          <div className="max-w-[1400px] mx-auto">
+            <div className="mb-6">
+              <h1 className="text-3xl md:text-4xl font-black text-zinc-950">
+                PickleMate 原版 vs 改版对比原型
+              </h1>
+              <p className="text-zinc-500 mt-2 text-base md:text-lg">
+                左侧为原版原型，右侧为修改版原型（带红点标注）
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-8">
+              {tabs.map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setPage(key)}
+                  className={`px-4 py-2 rounded-full text-sm md:text-base font-black ${
+                    page === key
+                      ? "bg-[#9dd53b] text-white"
+                      : "bg-white text-zinc-700 border border-zinc-200"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+              <div>
+                <div className="mb-4 flex items-center justify-center">
+                  <span className="px-4 py-2 rounded-full bg-white border border-zinc-200 font-black text-zinc-800 shadow-sm">
+                    原版原型
+                  </span>
+                </div>
+                <PhoneFrame>{renderOriginal()}</PhoneFrame>
+              </div>
+
+              <div>
+                <div className="mb-4 flex items-center justify-center">
+                  <span className="px-4 py-2 rounded-full bg-[#9dd53b]/15 border border-[#9dd53b]/30 font-black text-[#78bc1f] shadow-sm">
+                    改版原型（含修改标注）
+                  </span>
+                </div>
+                <PhoneFrame>{renderRevised()}</PhoneFrame>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<PickleMateComparePrototype />);
+  </script>
+</body>
+</html>
